@@ -6,7 +6,7 @@
 #define TOKEN               "0o3dthn7ze7rtxc6i801" 
 #define THINGSBOARD_SERVER  "10.37.16.195" 
 #define SERIAL_DEBUG_BAUD    115200
-
+bool mqttConnected = false;
 WiFiClient espClient;
 PubSubClient client(espClient);
 #define mqtt_server "broker.hivemq.com"
@@ -24,7 +24,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
-  
+  Serial.println();
+
   DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, message);
   
@@ -45,24 +46,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     client.publish("v1/devices/me/attributes", "LED OFF");
     digitalWrite(LED_PIN, LOW);  
   }
-  // if (String(topic) == "v1/devices/me/attributes") {
-  //       Serial.print("Changing output to ");
-  //       DynamicJsonDocument doc(1024);
-  //       DeserializationError error = deserializeJson(doc, message);
-  //       if (error) {
-  //           Serial.print("deserializeJson() failed: ");
-  //           Serial.println(error.c_str());
-  //           return;
-  //       }
-  //       const char* msg = doc["msg"];
-  //       if (strcmp(msg, "on") == 0) {
-  //           Serial.println("on");
-  //           digitalWrite(LED_PIN, HIGH);
-  //       } else if (strcmp(msg, "off") == 0) {
-  //           Serial.println("off");
-  //           digitalWrite(LED_PIN, LOW);
-  //       }
-  //   }
+
 }
 void setup_wifi() {
   delay(10);
@@ -92,6 +76,25 @@ void reconnect() {
       Serial.println(" try again in 5 seconds");
       delay(5000);
     }
+  }
+  
+}
+void connectToMQTT()
+{
+  client.setServer(mqtt_server, 1883); // Set MQTT server
+  Serial.print("Connecting to MQTT...");
+
+  // Attempt MQTT connection
+  if (client.connect("ESP32Client", "", ""))
+  {
+    Serial.println("MQTT connected");
+    mqttConnected = true;
+  }
+  else
+  {
+    Serial.print("Failed to connect to MQTT, rc=");
+    Serial.println(client.state());
+    mqttConnected = false;
   }
 }
 
@@ -138,7 +141,8 @@ void setup() {
 
 void loop() {
   if (!client.connected()) {
-    reconnect();
+    // reconnect();
+    connectToMQTT();
   }
 
   client.loop();
