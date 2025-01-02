@@ -14,7 +14,22 @@ PubSubClient client(espClient);
 #define LIGHT_SENSOR_PIN 25 // Không có chân analog, dùng chân digital
 
 bool subscribed = false;
+void setup() {
+  Serial.begin(SERIAL_DEBUG_BAUD);
+  setup_wifi();
+  WiFi.begin(WIFI_AP_NAME, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to AP");
 
+  client.setServer(THINGSBOARD_SERVER, 1883);
+  client.setCallback(callback);
+  
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(LIGHT_SENSOR_PIN, INPUT); 
+}
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -67,7 +82,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     
-    if (client.connect("ESP32Client", TOKEN, "")) {
+    if (client.connect("ESP32Client", TOKEN,"")) {
       Serial.println("connected");
       client.subscribe("v1/devices/me/attributes");
     } else {
@@ -78,24 +93,6 @@ void reconnect() {
     }
   }
   
-}
-void connectToMQTT()
-{
-  client.setServer(mqtt_server, 1883); // Set MQTT server
-  Serial.print("Connecting to MQTT...");
-
-  // Attempt MQTT connection
-  if (client.connect("ESP32Client", "", ""))
-  {
-    Serial.println("MQTT connected");
-    mqttConnected = true;
-  }
-  else
-  {
-    Serial.print("Failed to connect to MQTT, rc=");
-    Serial.println(client.state());
-    mqttConnected = false;
-  }
 }
 
 void changeLedState(bool state) {
@@ -113,7 +110,7 @@ void sendLightSensorData() {
   float lightValue = digitalRead(LIGHT_SENSOR_PIN);
   float voltage = lightValue ;  
   float lightIntensity = map(lightValue, 0, 4095, 0, 100);
-  changeLedState(digitalRead(LIGHT_SENSOR_PIN));
+  //changeLedState(digitalRead(LIGHT_SENSOR_PIN));
   String payload = "{\"light_intensity\":" + String(lightValue) + "}";
   Serial.print("Publishing light intensity: ");
   Serial.println(lightValue);
@@ -122,27 +119,11 @@ void sendLightSensorData() {
   client.publish("v1/devices/me/telemetry", payload.c_str());
 }
 
-void setup() {
-  Serial.begin(SERIAL_DEBUG_BAUD);
-  setup_wifi();
-  WiFi.begin(WIFI_AP_NAME, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected to AP");
 
-  client.setServer(THINGSBOARD_SERVER, 1883);
-  client.setCallback(callback);
-  
-  pinMode(LED_PIN, OUTPUT);
-  pinMode(LIGHT_SENSOR_PIN, INPUT); 
-}
 
 void loop() {
-  if (!client.connected()) {
-    // reconnect();
-    connectToMQTT();
+  if (client.connected() == false) {
+    reconnect();
   }
 
   client.loop();
