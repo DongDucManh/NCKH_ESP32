@@ -121,7 +121,7 @@ void loop() {
 
   // Send light sensor data every second
   sendLightSensorData();
-  delay(1000); // Delay 1 second between sensor data sends
+  // delay(1000); // Delay 1 second between sensor data sends
 }
 /*
  * Kết nối:
