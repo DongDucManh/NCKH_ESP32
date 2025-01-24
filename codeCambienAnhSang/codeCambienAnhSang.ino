@@ -1,30 +1,22 @@
 #include <PubSubClient.h>  
 #include <WiFi.h>
 #include <ArduinoJson.h>  
-#define WIFI_AP_NAME        "UTC-STUDENT"
-#define WIFI_PASSWORD       ""
-#define TOKEN               "0o3dthn7ze7rtxc6i801" 
-#define THINGSBOARD_SERVER  "10.37.16.195" 
+#define WIFI_AP_NAME        "Manh quy"
+#define WIFI_PASSWORD       "11052005"
+#define TOKEN               "CroIT6OSkT1911EVc2Mw" 
+#define THINGSBOARD_SERVER  "210.211.96.129" 
 #define SERIAL_DEBUG_BAUD    115200
 bool mqttConnected = false;
 WiFiClient espClient;
 PubSubClient client(espClient);
-#define mqtt_server "broker.hivemq.com"
+#define mqtt_server "210.211.96.129"
 #define LED_PIN 17
-#define LIGHT_SENSOR_PIN 25 // Không có chân analog, dùng chân digital
-
+#define LIGHT_SENSOR_PIN 4 
 bool subscribed = false;
 void setup() {
   Serial.begin(SERIAL_DEBUG_BAUD);
   setup_wifi();
-  WiFi.begin(WIFI_AP_NAME, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected to AP");
-
-  client.setServer(THINGSBOARD_SERVER, 1883);
+  client.setServer(THINGSBOARD_SERVER, 5883);
   client.setCallback(callback);
   
   pinMode(LED_PIN, OUTPUT);
@@ -64,7 +56,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 }
 void setup_wifi() {
-  delay(10);
+
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(WIFI_AP_NAME);
@@ -107,7 +99,7 @@ void changeLedState(bool state) {
   client.publish("v1/devices/me/attributes", payload.c_str());
 }
 void sendLightSensorData() {
-  float lightValue = digitalRead(LIGHT_SENSOR_PIN);
+  float lightValue = analogRead(34);
   float voltage = lightValue ;  
   float lightIntensity = map(lightValue, 0, 4095, 0, 100);
   //changeLedState(digitalRead(LIGHT_SENSOR_PIN));
@@ -132,3 +124,37 @@ void loop() {
   sendLightSensorData();
   delay(1000); // Delay 1 second between sensor data sends
 }
+/*
+ * Kết nối:
+ *          VCC      -----      3.3V (ESP32)
+ *          D0       -----      GPIO4 (ESP32)
+ *          A0       -----      GPIO34 (ESP32 - ADC1_CH6)
+ *          GND      -----      GND (ESP32)
+ */
+
+// void setup() 
+// {
+//   // Khởi tạo Serial Monitor với tốc độ baud 115200
+//   Serial.begin(115200);
+  
+//   // Cấu hình chân GPIO4 là INPUT để đọc giá trị digital
+//   pinMode(4, INPUT);
+// }
+
+// void loop() 
+// {
+//   // Đọc giá trị digital từ chân GPIO4
+//   int digitalValue = digitalRead(4);
+  
+//   // Đọc giá trị analog từ chân GPIO34 (ADC1_CH6)
+//   int analogValue = analogRead(34);
+  
+//   // Hiển thị giá trị digital và analog trên Serial Monitor
+//   Serial.print("Giá trị Digital (D0): ");
+//   Serial.print(digitalValue);
+//   Serial.print("   |   Giá trị Analog (A0): ");
+//   Serial.println(analogValue);
+  
+//   // Đợi 1 giây trước khi đọc lại
+//   delay(1000);
+// }
