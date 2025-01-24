@@ -21,8 +21,10 @@ void setup() {
   
   pinMode(LED_PIN, OUTPUT);
   pinMode(LIGHT_SENSOR_PIN, INPUT); 
+  digitalWrite(LED_PIN, HIGH);
 }
 void callback(char* topic, byte* payload, unsigned int length) {
+
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -33,7 +35,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  DynamicJsonDocument doc(1024);
+   DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, message);
   
   if (error) {
@@ -41,22 +43,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println(error.c_str());
     return;
   }
-  
-  bool state = doc["state"].as<bool>();
-  
-  if (state) {
-    Serial.println("LED ON");
-    client.publish("v1/devices/me/attributes", "LED ON");
-    digitalWrite(LED_PIN, HIGH);
-  } else {
-    Serial.println("LED OFF");
-    client.publish("v1/devices/me/attributes", "LED OFF");
-    digitalWrite(LED_PIN, LOW);  
-  }
+
 
 }
 void setup_wifi() {
-
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(WIFI_AP_NAME);
@@ -77,6 +67,7 @@ void reconnect() {
     if (client.connect("ESP32Client", TOKEN,"")) {
       Serial.println("connected");
       client.subscribe("v1/devices/me/attributes");
+      client.subscribe("v1/devices/me/telemetry");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -96,7 +87,6 @@ void changeLedState(bool state) {
   String payload = "{\"state\":" + String(state) + "}";
   Serial.print("Publishing state: ");
   Serial.println(payload);
-  client.publish("v1/devices/me/attributes", payload.c_str());
 }
 void sendLightSensorData() {
   float lightValue = analogRead(34);
@@ -106,7 +96,16 @@ void sendLightSensorData() {
   String payload = "{\"light_intensity\":" + String(lightValue) + "}";
   Serial.print("Publishing light intensity: ");
   Serial.println(lightValue);
-
+  if (lightValue < 1500){
+    String mes = "{\"led\":" + String(0) + "}";
+    client.publish("v1/devices/me/attributes", mes.c_str());
+    changeLedState(false);
+  }
+  else{
+    String mes = "{\"led\":" + String(1) + "}";
+    client.publish("v1/devices/me/attributes", mes.c_str());
+    changeLedState(true);
+  }
 
   client.publish("v1/devices/me/telemetry", payload.c_str());
 }
