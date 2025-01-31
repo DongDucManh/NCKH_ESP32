@@ -85,16 +85,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
     String method = doc["method"]; // Lấy phương thức RPC
 
     if (method == "setLedState") {
-      int ledPin = doc["params"]["led"]; // Lấy chân LED (15 hoặc 17)
+   
       bool state = doc["params"]["state"]; // Lấy trạng thái (true/false)
+      changeLedState(15,state);
 
-      if (ledPin == 15) {
-        digitalWrite(LED_PIN_15, state ? HIGH : LOW); // Điều khiển LED 15
-      } else if (ledPin == 17) {
-        digitalWrite(LED_PIN_17, state ? HIGH : LOW); // Điều khiển LED 17
-      }
 
-      // Gửi phản hồi
       String responseTopic = "v1/devices/me/rpc/response/" + requestId;
       String responsePayload = "{\"success\": true}";
       client.publish(responseTopic.c_str(), responsePayload.c_str());
